@@ -26,7 +26,6 @@
     }
 
     .ok { background: #003300; color: #00ff88; }
-    .erro { background: #330000; color: #ff4444; }
     .aguardando { color: #ccc; }
   </style>
 </head>
@@ -66,44 +65,12 @@
     }
   }
 
-  // 🔥 ENVIO SEM CORS (GARANTIDO)
+  // 🔥 EXECUÇÃO DIRETA (SEM CORS, SEM ERRO)
   function enviar(url) {
-
-    let status = document.getElementById("status");
-    status.innerText = "Enviando...";
-    status.className = "aguardando";
-
-    try {
-      let img = new Image();
-      img.src = url + "&t=" + new Date().getTime(); // evita cache
-
-      // assume sucesso após pequeno delay
-      setTimeout(() => {
-        status.innerText = "✔ REGISTRADO";
-        status.className = "ok";
-
-        beep();
-        vibrar();
-
-        resetar();
-      }, 800);
-
-    } catch (e) {
-      status.innerText = "❌ ERRO";
-      status.className = "erro";
-      vibrar();
-
-      setTimeout(() => resetar(), 2000);
-    }
-  }
-
-  function resetar() {
-    setTimeout(() => {
-      bloqueado = false;
-      ultimo = "";
-      document.getElementById("status").innerText = "Aguardando leitura...";
-      document.getElementById("status").className = "aguardando";
-    }, 1500);
+    document.getElementById("status").innerText = "Executando...";
+    
+    // método mais confiável possível
+    window.location.href = url;
   }
 
   function onScanSuccess(decodedText) {
@@ -114,13 +81,15 @@
     ultimo = decodedText;
     bloqueado = true;
 
-    document.getElementById("status").innerText = "QR lido";
-    document.getElementById("status").className = "aguardando";
+    document.getElementById("status").innerText = "QR lido ✔";
+    document.getElementById("status").className = "ok";
 
     beep();
     vibrar();
 
-    enviar(decodedText);
+    setTimeout(() => {
+      enviar(decodedText);
+    }, 300);
   }
 
   const html5QrCode = new Html5Qrcode("reader");
@@ -148,10 +117,8 @@
     );
 
   }).catch(err => {
-    document.getElementById("status").innerText = "Erro ao acessar câmera";
-    document.getElementById("status").className = "erro";
+    document.getElementById("status").innerText = "Erro câmera";
   });
-
 </script>
 
 </body>
