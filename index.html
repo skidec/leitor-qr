@@ -20,12 +20,8 @@
       margin-top: 20px;
       font-size: 18px;
     }
-    .ok {
-      color: #00ff88;
-    }
-    .erro {
-      color: #ff4444;
-    }
+    .ok { color: #00ff88; }
+    .erro { color: #ff4444; }
   </style>
 </head>
 
@@ -39,7 +35,6 @@
   let ultimo = "";
   let bloqueado = false;
 
-  // 🔊 BIP
   function beep() {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -59,12 +54,19 @@
     } catch(e) {}
   }
 
-  // 🚀 EXECUÇÃO CONFIÁVEL
-  function executarLink(url) {
-    document.getElementById("status").innerText = "Executando...";
-    
-    // redireciona
-    window.location.href = url;
+  // 🔥 ENVIO 100% FUNCIONAL (SEM CORS)
+  function enviar(url) {
+    try {
+      let img = new Image();
+      img.src = url;
+
+      document.getElementById("status").innerText = "OK enviado";
+      document.getElementById("status").className = "ok";
+
+    } catch (e) {
+      document.getElementById("status").innerText = "Erro ao enviar";
+      document.getElementById("status").className = "erro";
+    }
   }
 
   function onScanSuccess(decodedText) {
@@ -82,18 +84,13 @@
     beep();
 
     setTimeout(() => {
-      executarLink(decodedText);
+      enviar(decodedText);
     }, 300);
   }
 
   const html5QrCode = new Html5Qrcode("reader");
 
   Html5Qrcode.getCameras().then(devices => {
-
-    if (!devices.length) {
-      document.getElementById("status").innerText = "Nenhuma câmera encontrada";
-      return;
-    }
 
     let backCamera = devices.find(device =>
       device.label.toLowerCase().includes("back") ||
