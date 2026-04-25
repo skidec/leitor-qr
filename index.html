@@ -13,6 +13,7 @@
   <style>
     body {
       margin: 0;
+      padding: 3vh 0; /* 🔥 espaço superior e inferior */
       background: #000;
       color: #fff;
       text-align: center;
@@ -20,25 +21,26 @@
     }
 
     h2 {
-      font-size: 5vw; /* 🔥 responsivo */
-      margin: 10px 0;
+      font-size: 5vw;
+      margin: 10px 0 15px 0; /* 🔥 mais próximo do reader */
     }
 
     #reader {
       width: 100vw;
-      height: 80vh;
+      height: 70vh; /* 🔥 reduz um pouco para abrir espaço */
     }
 
     #status {
-      font-size: 8vw; /* 🔥 bem grande */
-      padding: 20px;
+      font-size: 8vw;
+      padding: 15px;
+      margin-top: 10px; /* 🔥 aproxima do scanner */
       font-weight: bold;
     }
 
     .ok { 
       background: #003300; 
       color: #00ff88; 
-      font-size: 12vw; /* 🔥 maior ainda quando OK */
+      font-size: 12vw;
     }
 
     .erro { 
