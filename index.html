@@ -20,6 +20,12 @@
       margin-top: 20px;
       font-size: 18px;
     }
+    .ok {
+      color: #00ff88;
+    }
+    .erro {
+      color: #ff4444;
+    }
   </style>
 </head>
 
@@ -31,50 +37,53 @@
 
 <script>
   let ultimo = "";
+  let bloqueado = false;
 
   // 🔊 BIP
   function beep() {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-    osc.frequency.value = 1000;
-    osc.start();
+      osc.frequency.value = 1000;
+      osc.start();
 
-    setTimeout(() => {
-      osc.stop();
-      ctx.close();
-    }, 150);
+      setTimeout(() => {
+        osc.stop();
+        ctx.close();
+      }, 150);
+    } catch(e) {}
   }
 
-  // 🚀 EXECUTA LINK (SEM CORS - FUNCIONA 100%)
+  // 🚀 EXECUÇÃO CONFIÁVEL
   function executarLink(url) {
     document.getElementById("status").innerText = "Executando...";
-
+    
     // redireciona
     window.location.href = url;
-
-    // volta automaticamente para o leitor
-    setTimeout(() => {
-      window.location.reload();
-    }, 2000);
   }
 
   function onScanSuccess(decodedText) {
 
-    // evita duplicidade
+    if (bloqueado) return;
+
     if (decodedText === ultimo) return;
     ultimo = decodedText;
 
-    setTimeout(() => ultimo = "", 3000);
+    bloqueado = true;
 
-    document.getElementById("status").innerText = "Lido com sucesso";
+    document.getElementById("status").innerText = "QR lido ✔";
+    document.getElementById("status").className = "ok";
+
     beep();
 
-    executarLink(decodedText);
+    setTimeout(() => {
+      executarLink(decodedText);
+    }, 300);
   }
 
   const html5QrCode = new Html5Qrcode("reader");
@@ -86,7 +95,6 @@
       return;
     }
 
-    // 🔥 seleciona traseira
     let backCamera = devices.find(device =>
       device.label.toLowerCase().includes("back") ||
       device.label.toLowerCase().includes("traseira") ||
@@ -110,6 +118,7 @@
   }).catch(err => {
     console.error(err);
     document.getElementById("status").innerText = "Erro ao acessar câmera";
+    document.getElementById("status").className = "erro";
   });
 </script>
 
