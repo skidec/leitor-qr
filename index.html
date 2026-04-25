@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Leitor QR - Ensaios</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #111;
+      color: #fff;
+    }
+    #reader {
+      width: 300px;
+      margin: auto;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Leitor de Ensaios</h2>
+<div id="reader"></div>
+<p id="status">Aguardando leitura...</p>
+
+<script>
+  let ultimo = "";
+
+  // 🔊 som de bip simples
+  function beep() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+
+    oscillator.type = "sine";
+    oscillator.frequency.value = 1000;
+
+    oscillator.start();
+
+    setTimeout(() => {
+      oscillator.stop();
+      ctx.close();
+    }, 150);
+  }
+
+  function onScanSuccess(decodedText) {
+
+    if (decodedText === ultimo) return;
+    ultimo = decodedText;
+
+    setTimeout(() => ultimo = "", 3000);
+
+    document.getElementById("status").innerText = "Enviando...";
+
+    // 🔊 toca bip ao ler
+    beep();
+
+    fetch(decodedText)
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("status").innerText = data;
+      })
+      .catch(err => {
+        document.getElementById("status").innerText = "Erro ao enviar";
+      });
+  }
+
+  const html5QrCode = new Html5Qrcode("reader");
+
+  Html5Qrcode.getCameras().then(devices => {
+    if (devices && devices.length) {
+      html5QrCode.start(
+        devices[0].id,
+        {
+          fps: 10,
+          qrbox: 250
+        },
+        onScanSuccess
+      );
+    }
+  }).catch(err => {
+    console.error(err);
+  });
+</script>
+
+</body>
+</html>
