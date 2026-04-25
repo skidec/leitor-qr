@@ -22,24 +22,49 @@
     #reader {
       width: 100vw;
       height: 85vh;
+      position: relative;
     }
 
     #status {
-      font-size: 22px;
-      padding: 12px;
+      font-size: 18px;
+      padding: 10px;
     }
 
-    .ok { background: #003300; color: #00ff88; }
-    .erro { background: #330000; color: #ff4444; }
-    .aguardando { color: #ccc; }
+    /* 🔥 overlay central */
+    #overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 60px;
+      font-weight: bold;
+      padding: 20px 40px;
+      border-radius: 12px;
+      display: none;
+      z-index: 999;
+    }
+
+    .ok {
+      background: rgba(0, 100, 0, 0.85);
+      color: #00ff88;
+    }
+
+    .erro {
+      background: rgba(120, 0, 0, 0.85);
+      color: #ff4444;
+    }
   </style>
 </head>
 
 <body>
 
 <h2>Leitor de Ensaios</h2>
-<div id="reader"></div>
-<p id="status" class="aguardando">Aguardando leitura...</p>
+
+<div id="reader">
+  <div id="overlay"></div>
+</div>
+
+<p id="status">Aguardando leitura...</p>
 
 <script>
 let ultimo = "";
@@ -68,24 +93,36 @@ function vibrar() {
   if (navigator.vibrate) navigator.vibrate(150);
 }
 
-// 🔥 ENVIO GARANTIDO (SEM CORS)
-function enviar(url) {
-  let status = document.getElementById("status");
+// 🔥 MOSTRAR OVERLAY
+function mostrarOverlay(texto, tipo) {
+  let overlay = document.getElementById("overlay");
 
-  status.innerText = "Registrando...";
-  status.className = "aguardando";
+  overlay.innerText = texto;
+  overlay.className = tipo;
+  overlay.style.display = "block";
+}
+
+// 🔁 ESCONDER OVERLAY
+function esconderOverlay() {
+  document.getElementById("overlay").style.display = "none";
+}
+
+// 🔥 ENVIO
+function enviar(url) {
+  document.getElementById("status").innerText = "Registrando...";
 
   let img = new Image();
   img.src = url + "&t=" + new Date().getTime();
 
   setTimeout(() => {
-    status.innerText = "✔ REGISTRADO";
-    status.className = "ok";
+
+    mostrarOverlay("REGISTRADO", "ok");
 
     beep();
     vibrar();
 
     resetar();
+
   }, 800);
 }
 
@@ -94,8 +131,10 @@ function resetar() {
   setTimeout(() => {
     bloqueado = false;
     ultimo = "";
+
+    esconderOverlay();
+
     document.getElementById("status").innerText = "Aguardando leitura...";
-    document.getElementById("status").className = "aguardando";
   }, 2000);
 }
 
