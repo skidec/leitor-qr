@@ -22,45 +22,27 @@
     #reader {
       width: 100vw;
       height: 85vh;
-      position: relative;
-    }
-
-    #overlay {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 60px;
-      font-weight: bold;
-      padding: 20px 40px;
-      border-radius: 12px;
-      display: none;
-      z-index: 999;
-    }
-
-    .ok {
-      background: rgba(0,100,0,0.85);
-      color: #00ff88;
     }
 
     #status {
-      font-size: 18px;
-      padding: 10px;
+      font-size: 22px;
+      padding: 12px;
     }
+
+    .ok { background: #003300; color: #00ff88; }
+    .erro { background: #330000; color: #ff4444; }
+    .aguardando { color: #ccc; }
   </style>
 </head>
 
 <body>
 
 <h2>Leitor de Ensaios</h2>
-
-<div id="reader">
-  <div id="overlay"></div>
-</div>
-
-<p id="status">Aguardando leitura...</p>
+<div id="reader"></div>
+<p id="status" class="aguardando">Aguardando leitura...</p>
 
 <script>
+let ultimo = "";
 let bloqueado = false;
 
 function beep() {
@@ -86,60 +68,46 @@ function vibrar() {
   if (navigator.vibrate) navigator.vibrate(150);
 }
 
-function mostrarOverlay(texto) {
-  let overlay = document.getElementById("overlay");
-  overlay.innerText = texto;
-  overlay.className = "ok";
-  overlay.style.display = "block";
-}
-
-function esconderOverlay() {
-  document.getElementById("overlay").style.display = "none";
-}
-
-// 🔥 ENVIO GARANTIDO
+// 🔥 ENVIO GARANTIDO (SEM CORS)
 function enviar(url) {
+  let status = document.getElementById("status");
 
-  document.getElementById("status").innerText = "Registrando...";
+  status.innerText = "Registrando...";
+  status.className = "aguardando";
 
-  try {
-    // executa chamada
-    let img = new Image();
-    img.src = url + "&t=" + Date.now();
+  let img = new Image();
+  img.src = url + "&t=" + new Date().getTime();
 
-    console.log("Chamando:", img.src);
-
-  } catch (e) {
-    console.error("Erro envio:", e);
-  }
-
-  // 🔥 GARANTE overlay independente do retorno
   setTimeout(() => {
-
-    mostrarOverlay("REGISTRADO");
+    status.innerText = "✔ REGISTRADO";
+    status.className = "ok";
 
     beep();
     vibrar();
 
     resetar();
-
   }, 800);
 }
 
+// 🔁 RESET
 function resetar() {
   setTimeout(() => {
     bloqueado = false;
-    esconderOverlay();
+    ultimo = "";
     document.getElementById("status").innerText = "Aguardando leitura...";
+    document.getElementById("status").className = "aguardando";
   }, 2000);
 }
 
 function onScanSuccess(decodedText) {
 
   if (bloqueado) return;
+  if (decodedText === ultimo) return;
+
+  ultimo = decodedText;
   bloqueado = true;
 
-  console.log("QR lido:", decodedText);
+  document.getElementById("status").innerText = "QR lido ✔";
 
   beep();
   vibrar();
