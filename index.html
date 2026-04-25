@@ -12,16 +12,32 @@
       background: #111;
       color: #fff;
     }
+
     #reader {
-      width: 300px;
+      width: 320px;
       margin: auto;
     }
+
     #status {
       margin-top: 20px;
-      font-size: 18px;
+      font-size: 20px;
+      padding: 10px;
+      border-radius: 8px;
     }
-    .ok { color: #00ff88; }
-    .erro { color: #ff4444; }
+
+    .ok {
+      background: #003300;
+      color: #00ff88;
+    }
+
+    .erro {
+      background: #330000;
+      color: #ff4444;
+    }
+
+    .aguardando {
+      color: #ccc;
+    }
   </style>
 </head>
 
@@ -29,12 +45,13 @@
 
 <h2>Leitor de Ensaios</h2>
 <div id="reader"></div>
-<p id="status">Aguardando leitura...</p>
+<p id="status" class="aguardando">Aguardando leitura...</p>
 
 <script>
   let ultimo = "";
   let bloqueado = false;
 
+  // 🔊 BIP
   function beep() {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -50,42 +67,86 @@
       setTimeout(() => {
         osc.stop();
         ctx.close();
-      }, 150);
+      }, 120);
     } catch(e) {}
   }
 
-  // 🔥 ENVIO 100% FUNCIONAL (SEM CORS)
-  function enviar(url) {
-    try {
-      let img = new Image();
-      img.src = url;
-
-      document.getElementById("status").innerText = "OK enviado";
-      document.getElementById("status").className = "ok";
-
-    } catch (e) {
-      document.getElementById("status").innerText = "Erro ao enviar";
-      document.getElementById("status").className = "erro";
+  // 📳 vibração
+  function vibrar() {
+    if (navigator.vibrate) {
+      navigator.vibrate(150);
     }
+  }
+
+  // 🔥 ENVIO COM CONFIRMAÇÃO REAL
+  function enviar(url, tentativas = 0) {
+
+    let status = document.getElementById("status");
+    status.innerText = "Enviando...";
+    status.className = "aguardando";
+
+    // 🔑 cria versão para resposta (evita cache)
+    let urlConfirmacao = url + "&t=" + new Date().getTime();
+
+    fetch(urlConfirmacao, { method: "GET" })
+      .then(res => res.text())
+      .then(data => {
+
+        if (data.toLowerCase().includes("ok")) {
+
+          status.innerText = "✔ REGISTRADO";
+          status.className = "ok";
+
+          beep();
+          vibrar();
+
+          resetar();
+
+        } else {
+          throw new Error("Resposta inválida");
+        }
+
+      })
+      .catch(err => {
+
+        if (tentativas < 2) {
+          setTimeout(() => enviar(url, tentativas + 1), 500);
+          return;
+        }
+
+        status.innerText = "❌ ERRO AO ENVIAR";
+        status.className = "erro";
+
+        vibrar();
+
+        setTimeout(() => resetar(), 3000);
+      });
+  }
+
+  function resetar() {
+    setTimeout(() => {
+      bloqueado = false;
+      ultimo = "";
+      document.getElementById("status").innerText = "Aguardando leitura...";
+      document.getElementById("status").className = "aguardando";
+    }, 1500);
   }
 
   function onScanSuccess(decodedText) {
 
     if (bloqueado) return;
-
     if (decodedText === ultimo) return;
-    ultimo = decodedText;
 
+    ultimo = decodedText;
     bloqueado = true;
 
-    document.getElementById("status").innerText = "QR lido ✔";
-    document.getElementById("status").className = "ok";
+    document.getElementById("status").innerText = "QR lido";
+    document.getElementById("status").className = "aguardando";
 
     beep();
+    vibrar();
 
-    setTimeout(() => {
-      enviar(decodedText);
-    }, 300);
+    enviar(decodedText);
   }
 
   const html5QrCode = new Html5Qrcode("reader");
@@ -113,10 +174,10 @@
     );
 
   }).catch(err => {
-    console.error(err);
     document.getElementById("status").innerText = "Erro ao acessar câmera";
     document.getElementById("status").className = "erro";
   });
+
 </script>
 
 </body>
