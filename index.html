@@ -32,7 +32,7 @@
 <script>
   let ultimo = "";
 
-  // 🔊 som de bip simples
+  // 🔊 Bip
   function beep() {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = ctx.createOscillator();
@@ -54,6 +54,7 @@
 
   function onScanSuccess(decodedText) {
 
+    // evita leitura duplicada
     if (decodedText === ultimo) return;
     ultimo = decodedText;
 
@@ -61,9 +62,10 @@
 
     document.getElementById("status").innerText = "Enviando...";
 
-    // 🔊 toca bip ao ler
+    // 🔊 som
     beep();
 
+    // executa seu link (Apps Script)
     fetch(decodedText)
       .then(res => res.text())
       .then(data => {
@@ -76,20 +78,19 @@
 
   const html5QrCode = new Html5Qrcode("reader");
 
-  Html5Qrcode.getCameras().then(devices => {
-    if (devices && devices.length) {
-      html5QrCode.start(
-        devices[0].id,
-        {
-          fps: 10,
-          qrbox: 250
-        },
-        onScanSuccess
-      );
-    }
-  }).catch(err => {
-    console.error(err);
+  // 🚀 força câmera traseira
+  html5QrCode.start(
+    { facingMode: "environment" },
+    {
+      fps: 10,
+      qrbox: 250
+    },
+    onScanSuccess
+  ).catch(err => {
+    console.error("Erro ao iniciar câmera:", err);
+    document.getElementById("status").innerText = "Erro ao iniciar câmera";
   });
+
 </script>
 
 </body>
