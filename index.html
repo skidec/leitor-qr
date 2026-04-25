@@ -10,7 +10,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Leitor QR - Ensaios - FULL</title>
+  <title>Leitor QR - Ensaios</title>
 
   <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -23,19 +23,14 @@
       text-align: center;
     }
 
-    h2 {
-      margin: 10px 0;
-    }
-
     #reader {
       width: 100vw;
-      height: 75vh;
+      height: 80vh;
     }
 
     #status {
       font-size: 20px;
       padding: 12px;
-      margin-top: 10px;
     }
 
     .ok { background: #003300; color: #00ff88; }
@@ -108,28 +103,27 @@ Html5Qrcode.getCameras().then(devices => {
     return;
   }
 
-  console.log(devices);
+  // 🔥 melhor seleção de traseira
+  let backCamera = devices.find(d =>
+    d.label.toLowerCase().includes("back") ||
+    d.label.toLowerCase().includes("traseira") ||
+    d.label.toLowerCase().includes("environment")
+  );
 
-  // 🔥 força pegar traseira corretamente
-  let cameraId = devices[devices.length - 1].id;
+  let cameraId = backCamera ? backCamera.id : devices[devices.length - 1].id;
 
   html5QrCode.start(
     cameraId,
     {
       fps: 10,
       qrbox: { width: 300, height: 300 },
-      aspectRatio: 1.777,
-      videoConstraints: {
-        facingMode: "environment",
-        advanced: [{ zoom: 1 }]
-      }
+      aspectRatio: 1.777 // evita distorção
     },
     onScanSuccess
   );
 
 }).catch(err => {
   document.getElementById("status").innerText = "Erro câmera";
-  console.error(err);
 });
 </script>
 
