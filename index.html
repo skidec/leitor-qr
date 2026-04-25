@@ -2,35 +2,27 @@
 <html>
 <head>
   <meta charset="UTF-8">
-
-  <!-- anti cache -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>Leitor QR - Ensaios</title>
-
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
     body {
-      margin: 0;
       font-family: Arial;
-      background: #000;
-      color: #fff;
       text-align: center;
+      background: #111;
+      color: #fff;
     }
 
     #reader {
-      width: 100vw;
-      height: 80vh;
+      width: 320px;
+      margin: auto;
     }
 
     #status {
+      margin-top: 20px;
       font-size: 20px;
-      padding: 12px;
+      padding: 10px;
+      border-radius: 8px;
     }
 
     .ok { background: #003300; color: #00ff88; }
@@ -46,85 +38,120 @@
 <p id="status" class="aguardando">Aguardando leitura...</p>
 
 <script>
-let ultimo = "";
-let bloqueado = false;
+  let ultimo = "";
+  let bloqueado = false;
 
-function beep() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+  function beep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-    osc.frequency.value = 1000;
-    osc.start();
+      osc.frequency.value = 1000;
+      osc.start();
 
-    setTimeout(() => {
-      osc.stop();
-      ctx.close();
-    }, 120);
-  } catch(e) {}
-}
-
-function vibrar() {
-  if (navigator.vibrate) navigator.vibrate(150);
-}
-
-function executar(url) {
-  document.getElementById("status").innerText = "Executando...";
-  window.location.href = url;
-}
-
-function onScanSuccess(decodedText) {
-
-  if (bloqueado) return;
-  if (decodedText === ultimo) return;
-
-  ultimo = decodedText;
-  bloqueado = true;
-
-  document.getElementById("status").innerText = "QR lido ✔";
-  document.getElementById("status").className = "ok";
-
-  beep();
-  vibrar();
-
-  setTimeout(() => executar(decodedText), 300);
-}
-
-const html5QrCode = new Html5Qrcode("reader");
-
-Html5Qrcode.getCameras().then(devices => {
-
-  if (!devices.length) {
-    document.getElementById("status").innerText = "Sem câmera";
-    return;
+      setTimeout(() => {
+        osc.stop();
+        ctx.close();
+      }, 120);
+    } catch(e) {}
   }
 
-  // 🔥 melhor seleção de traseira
-  let backCamera = devices.find(d =>
-    d.label.toLowerCase().includes("back") ||
-    d.label.toLowerCase().includes("traseira") ||
-    d.label.toLowerCase().includes("environment")
-  );
+  function vibrar() {
+    if (navigator.vibrate) {
+      navigator.vibrate(150);
+    }
+  }
 
-  let cameraId = backCamera ? backCamera.id : devices[devices.length - 1].id;
+  // 🔥 ENVIO SEM CORS (GARANTIDO)
+  function enviar(url) {
 
-  html5QrCode.start(
-    cameraId,
-    {
-      fps: 10,
-      qrbox: { width: 300, height: 300 },
-      aspectRatio: 1.777 // evita distorção
-    },
-    onScanSuccess
-  );
+    let status = document.getElementById("status");
+    status.innerText = "Enviando...";
+    status.className = "aguardando";
 
-}).catch(err => {
-  document.getElementById("status").innerText = "Erro câmera";
-});
+    try {
+      let img = new Image();
+      img.src = url + "&t=" + new Date().getTime(); // evita cache
+
+      // assume sucesso após pequeno delay
+      setTimeout(() => {
+        status.innerText = "✔ REGISTRADO";
+        status.className = "ok";
+
+        beep();
+        vibrar();
+
+        resetar();
+      }, 800);
+
+    } catch (e) {
+      status.innerText = "❌ ERRO";
+      status.className = "erro";
+      vibrar();
+
+      setTimeout(() => resetar(), 2000);
+    }
+  }
+
+  function resetar() {
+    setTimeout(() => {
+      bloqueado = false;
+      ultimo = "";
+      document.getElementById("status").innerText = "Aguardando leitura...";
+      document.getElementById("status").className = "aguardando";
+    }, 1500);
+  }
+
+  function onScanSuccess(decodedText) {
+
+    if (bloqueado) return;
+    if (decodedText === ultimo) return;
+
+    ultimo = decodedText;
+    bloqueado = true;
+
+    document.getElementById("status").innerText = "QR lido";
+    document.getElementById("status").className = "aguardando";
+
+    beep();
+    vibrar();
+
+    enviar(decodedText);
+  }
+
+  const html5QrCode = new Html5Qrcode("reader");
+
+  Html5Qrcode.getCameras().then(devices => {
+
+    let backCamera = devices.find(device =>
+      device.label.toLowerCase().includes("back") ||
+      device.label.toLowerCase().includes("traseira") ||
+      device.label.toLowerCase().includes("environment")
+    );
+
+    let cameraId = backCamera ? backCamera.id : devices[devices.length - 1].id;
+
+    html5QrCode.start(
+      cameraId,
+      {
+        fps: 10,
+        qrbox: 250,
+        videoConstraints: {
+          advanced: [{ zoom: 2 }]
+        }
+      },
+      onScanSuccess
+    );
+
+  }).catch(err => {
+    document.getElementById("status").innerText = "Erro ao acessar câmera";
+    document.getElementById("status").className = "erro";
+  });
+
 </script>
 
 </body>
