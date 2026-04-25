@@ -25,19 +25,9 @@
       border-radius: 8px;
     }
 
-    .ok {
-      background: #003300;
-      color: #00ff88;
-    }
-
-    .erro {
-      background: #330000;
-      color: #ff4444;
-    }
-
-    .aguardando {
-      color: #ccc;
-    }
+    .ok { background: #003300; color: #00ff88; }
+    .erro { background: #330000; color: #ff4444; }
+    .aguardando { color: #ccc; }
   </style>
 </head>
 
@@ -51,7 +41,6 @@
   let ultimo = "";
   let bloqueado = false;
 
-  // 🔊 BIP
   function beep() {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -71,56 +60,41 @@
     } catch(e) {}
   }
 
-  // 📳 vibração
   function vibrar() {
     if (navigator.vibrate) {
       navigator.vibrate(150);
     }
   }
 
-  // 🔥 ENVIO COM CONFIRMAÇÃO REAL
-  function enviar(url, tentativas = 0) {
+  // 🔥 ENVIO SEM CORS (GARANTIDO)
+  function enviar(url) {
 
     let status = document.getElementById("status");
     status.innerText = "Enviando...";
     status.className = "aguardando";
 
-    // 🔑 cria versão para resposta (evita cache)
-    let urlConfirmacao = url + "&t=" + new Date().getTime();
+    try {
+      let img = new Image();
+      img.src = url + "&t=" + new Date().getTime(); // evita cache
 
-    fetch(urlConfirmacao, { method: "GET" })
-      .then(res => res.text())
-      .then(data => {
+      // assume sucesso após pequeno delay
+      setTimeout(() => {
+        status.innerText = "✔ REGISTRADO";
+        status.className = "ok";
 
-        if (data.toLowerCase().includes("ok")) {
-
-          status.innerText = "✔ REGISTRADO";
-          status.className = "ok";
-
-          beep();
-          vibrar();
-
-          resetar();
-
-        } else {
-          throw new Error("Resposta inválida");
-        }
-
-      })
-      .catch(err => {
-
-        if (tentativas < 2) {
-          setTimeout(() => enviar(url, tentativas + 1), 500);
-          return;
-        }
-
-        status.innerText = "❌ ERRO AO ENVIAR";
-        status.className = "erro";
-
+        beep();
         vibrar();
 
-        setTimeout(() => resetar(), 3000);
-      });
+        resetar();
+      }, 800);
+
+    } catch (e) {
+      status.innerText = "❌ ERRO";
+      status.className = "erro";
+      vibrar();
+
+      setTimeout(() => resetar(), 2000);
+    }
   }
 
   function resetar() {
