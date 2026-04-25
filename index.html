@@ -19,14 +19,20 @@
       font-family: Arial;
     }
 
+    h2 {
+      font-size: 2.4em; /* 🔥 +50% */
+      margin: 10px 0;
+    }
+
     #reader {
       width: 100vw;
       height: 85vh;
     }
 
     #status {
-      font-size: 22px;
-      padding: 12px;
+      font-size: 33px; /* 🔥 antes ~22px */
+      padding: 18px;
+      font-weight: bold;
     }
 
     .ok { background: #003300; color: #00ff88; }
@@ -68,11 +74,10 @@ function vibrar() {
   if (navigator.vibrate) navigator.vibrate(150);
 }
 
-// 🔥 ENVIO GARANTIDO (SEM CORS)
 function enviar(url) {
   let status = document.getElementById("status");
 
-  status.innerText = "Registrando...";
+  status.innerText = "REGISTRANDO...";
   status.className = "aguardando";
 
   let img = new Image();
@@ -89,12 +94,11 @@ function enviar(url) {
   }, 800);
 }
 
-// 🔁 RESET
 function resetar() {
   setTimeout(() => {
     bloqueado = false;
     ultimo = "";
-    document.getElementById("status").innerText = "Aguardando leitura...";
+    document.getElementById("status").innerText = "AGUARDANDO LEITURA...";
     document.getElementById("status").className = "aguardando";
   }, 2000);
 }
@@ -107,7 +111,7 @@ function onScanSuccess(decodedText) {
   ultimo = decodedText;
   bloqueado = true;
 
-  document.getElementById("status").innerText = "QR lido ✔";
+  document.getElementById("status").innerText = "QR LIDO ✔";
 
   beep();
   vibrar();
