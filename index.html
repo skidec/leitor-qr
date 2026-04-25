@@ -29,8 +29,14 @@
     }
 
     #status {
-      font-size: 22px;
+      font-size: 24px;
       padding: 12px;
+    }
+
+    #contador {
+      font-size: 40px;
+      font-weight: bold;
+      margin-top: 10px;
     }
 
     .ok { background: #003300; color: #00ff88; }
@@ -44,11 +50,17 @@
 <h2>Leitor de Ensaios</h2>
 <div id="reader"></div>
 <p id="status" class="aguardando">Aguardando leitura...</p>
+<div id="contador"></div>
 
 <script>
 let ultimo = "";
 let bloqueado = false;
 
+// ⏱ CONFIGURAÇÕES
+const TEMPO_ENVIO = 700;     // tempo simulação envio
+const TEMPO_EXIBICAO = 2000; // tempo mostrar "registrado"
+
+// 🔊 BIP
 function beep() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -68,11 +80,28 @@ function beep() {
   } catch(e) {}
 }
 
+// 📳 vibração
 function vibrar() {
   if (navigator.vibrate) navigator.vibrate(150);
 }
 
-// 🔥 ENVIO SEM SAIR DA TELA
+// 🔢 CONTADOR VISUAL
+function iniciarContador(segundos) {
+  let contador = document.getElementById("contador");
+  contador.innerText = segundos;
+
+  let intervalo = setInterval(() => {
+    segundos--;
+    contador.innerText = segundos;
+
+    if (segundos <= 0) {
+      clearInterval(intervalo);
+      contador.innerText = "";
+    }
+  }, 1000);
+}
+
+// 🔥 ENVIO
 function enviar(url) {
   let status = document.getElementById("status");
 
@@ -84,14 +113,18 @@ function enviar(url) {
     img.src = url + "&t=" + new Date().getTime();
 
     setTimeout(() => {
+
       status.innerText = "✔ REGISTRADO";
       status.className = "ok";
 
       beep();
       vibrar();
 
+      iniciarContador(TEMPO_EXIBICAO / 1000);
+
       resetar();
-    }, 700);
+
+    }, TEMPO_ENVIO);
 
   } catch (e) {
     status.innerText = "❌ ERRO";
@@ -102,16 +135,18 @@ function enviar(url) {
   }
 }
 
-// 🔁 VOLTA PARA PRÓXIMA LEITURA
+// 🔁 RESET
 function resetar() {
   setTimeout(() => {
     bloqueado = false;
     ultimo = "";
     document.getElementById("status").innerText = "Aguardando leitura...";
     document.getElementById("status").className = "aguardando";
-  }, 1500);
+    document.getElementById("contador").innerText = "";
+  }, TEMPO_EXIBICAO);
 }
 
+// 📷 LEITURA
 function onScanSuccess(decodedText) {
 
   if (bloqueado) return;
@@ -130,7 +165,7 @@ function onScanSuccess(decodedText) {
 
 const html5QrCode = new Html5Qrcode("reader");
 
-// 🔥 PERMISSÃO PRIMEIRO
+// 🔐 PERMISSÃO PRIMEIRO
 navigator.mediaDevices.getUserMedia({ video: true }).then(() => {
 
   Html5Qrcode.getCameras().then(devices => {
