@@ -29,11 +29,12 @@
     }
 
     #status {
-      font-size: 20px;
-      padding: 10px;
+      font-size: 22px;
+      padding: 12px;
     }
 
     .ok { background: #003300; color: #00ff88; }
+    .erro { background: #330000; color: #ff4444; }
     .aguardando { color: #ccc; }
   </style>
 </head>
@@ -71,9 +72,44 @@ function vibrar() {
   if (navigator.vibrate) navigator.vibrate(150);
 }
 
-function executar(url) {
-  document.getElementById("status").innerText = "Executando...";
-  window.location.href = url;
+// 🔥 ENVIO SEM SAIR DA TELA
+function enviar(url) {
+  let status = document.getElementById("status");
+
+  status.innerText = "Registrando...";
+  status.className = "aguardando";
+
+  try {
+    let img = new Image();
+    img.src = url + "&t=" + new Date().getTime();
+
+    setTimeout(() => {
+      status.innerText = "✔ REGISTRADO";
+      status.className = "ok";
+
+      beep();
+      vibrar();
+
+      resetar();
+    }, 700);
+
+  } catch (e) {
+    status.innerText = "❌ ERRO";
+    status.className = "erro";
+    vibrar();
+
+    setTimeout(() => resetar(), 2000);
+  }
+}
+
+// 🔁 VOLTA PARA PRÓXIMA LEITURA
+function resetar() {
+  setTimeout(() => {
+    bloqueado = false;
+    ultimo = "";
+    document.getElementById("status").innerText = "Aguardando leitura...";
+    document.getElementById("status").className = "aguardando";
+  }, 1500);
 }
 
 function onScanSuccess(decodedText) {
@@ -85,29 +121,20 @@ function onScanSuccess(decodedText) {
   bloqueado = true;
 
   document.getElementById("status").innerText = "QR lido ✔";
-  document.getElementById("status").className = "ok";
 
   beep();
   vibrar();
 
-  setTimeout(() => executar(decodedText), 300);
+  enviar(decodedText);
 }
 
 const html5QrCode = new Html5Qrcode("reader");
 
-// 🔥 ETAPA 1: forçar permissão primeiro
+// 🔥 PERMISSÃO PRIMEIRO
 navigator.mediaDevices.getUserMedia({ video: true }).then(() => {
 
   Html5Qrcode.getCameras().then(devices => {
 
-    if (!devices.length) {
-      document.getElementById("status").innerText = "Sem câmera";
-      return;
-    }
-
-    console.log("Câmeras:", devices);
-
-    // 🔥 PRIORIDADE DE ESCOLHA
     let cameraId =
       devices.find(d => d.label.toLowerCase().includes("back"))?.id ||
       devices.find(d => d.label.toLowerCase().includes("traseira"))?.id ||
@@ -118,8 +145,6 @@ navigator.mediaDevices.getUserMedia({ video: true }).then(() => {
       cameraId,
       {
         fps: 10,
-
-        // 🔥 leitura quase tela toda
         qrbox: function(w, h) {
           let min = Math.min(w, h);
           return {
@@ -127,7 +152,6 @@ navigator.mediaDevices.getUserMedia({ video: true }).then(() => {
             height: min * 0.9
           };
         },
-
         aspectRatio: 1.777
       },
       onScanSuccess
@@ -135,7 +159,7 @@ navigator.mediaDevices.getUserMedia({ video: true }).then(() => {
 
   });
 
-}).catch(err => {
+}).catch(() => {
   document.getElementById("status").innerText = "Permissão negada";
 });
 </script>
