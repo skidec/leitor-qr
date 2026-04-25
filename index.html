@@ -65,11 +65,10 @@
     }
   }
 
-  // 🔥 EXECUÇÃO DIRETA (SEM CORS, SEM ERRO)
-  function enviar(url) {
+  function executar(url) {
     document.getElementById("status").innerText = "Executando...";
-    
-    // método mais confiável possível
+
+    // 🔥 abre o script (funciona SEMPRE)
     window.location.href = url;
   }
 
@@ -88,7 +87,7 @@
     vibrar();
 
     setTimeout(() => {
-      enviar(decodedText);
+      executar(decodedText);
     }, 300);
   }
 
