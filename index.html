@@ -32,7 +32,6 @@
 <script>
   let ultimo = "";
 
-  // 🔊 Bip
   function beep() {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = ctx.createOscillator();
@@ -41,9 +40,7 @@
     oscillator.connect(gain);
     gain.connect(ctx.destination);
 
-    oscillator.type = "sine";
     oscillator.frequency.value = 1000;
-
     oscillator.start();
 
     setTimeout(() => {
@@ -53,19 +50,14 @@
   }
 
   function onScanSuccess(decodedText) {
-
-    // evita leitura duplicada
     if (decodedText === ultimo) return;
     ultimo = decodedText;
 
     setTimeout(() => ultimo = "", 3000);
 
     document.getElementById("status").innerText = "Enviando...";
-
-    // 🔊 som
     beep();
 
-    // executa seu link (Apps Script)
     fetch(decodedText)
       .then(res => res.text())
       .then(data => {
@@ -78,19 +70,35 @@
 
   const html5QrCode = new Html5Qrcode("reader");
 
-  // 🚀 força câmera traseira
-  html5QrCode.start(
-    { facingMode: "environment" },
-    {
-      fps: 10,
-      qrbox: 250
-    },
-    onScanSuccess
-  ).catch(err => {
-    console.error("Erro ao iniciar câmera:", err);
-    document.getElementById("status").innerText = "Erro ao iniciar câmera";
-  });
+  Html5Qrcode.getCameras().then(devices => {
 
+    if (!devices.length) {
+      document.getElementById("status").innerText = "Nenhuma câmera encontrada";
+      return;
+    }
+
+    // 🔥 força pegar câmera traseira pelo nome
+    let backCamera = devices.find(device =>
+      device.label.toLowerCase().includes("back") ||
+      device.label.toLowerCase().includes("traseira") ||
+      device.label.toLowerCase().includes("environment")
+    );
+
+    let cameraId = backCamera ? backCamera.id : devices[devices.length - 1].id;
+
+    html5QrCode.start(
+      cameraId,
+      {
+        fps: 10,
+        qrbox: 250
+      },
+      onScanSuccess
+    );
+
+  }).catch(err => {
+    document.getElementById("status").innerText = "Erro ao acessar câmera";
+    console.error(err);
+  });
 </script>
 
 </body>
