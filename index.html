@@ -25,12 +25,6 @@
       position: relative;
     }
 
-    #status {
-      font-size: 18px;
-      padding: 10px;
-    }
-
-    /* 🔥 overlay central */
     #overlay {
       position: absolute;
       top: 50%;
@@ -45,13 +39,13 @@
     }
 
     .ok {
-      background: rgba(0, 100, 0, 0.85);
+      background: rgba(0,100,0,0.85);
       color: #00ff88;
     }
 
-    .erro {
-      background: rgba(120, 0, 0, 0.85);
-      color: #ff4444;
+    #status {
+      font-size: 18px;
+      padding: 10px;
     }
   </style>
 </head>
@@ -67,7 +61,6 @@
 <p id="status">Aguardando leitura...</p>
 
 <script>
-let ultimo = "";
 let bloqueado = false;
 
 function beep() {
@@ -93,30 +86,37 @@ function vibrar() {
   if (navigator.vibrate) navigator.vibrate(150);
 }
 
-// 🔥 MOSTRAR OVERLAY
-function mostrarOverlay(texto, tipo) {
+function mostrarOverlay(texto) {
   let overlay = document.getElementById("overlay");
-
   overlay.innerText = texto;
-  overlay.className = tipo;
+  overlay.className = "ok";
   overlay.style.display = "block";
 }
 
-// 🔁 ESCONDER OVERLAY
 function esconderOverlay() {
   document.getElementById("overlay").style.display = "none";
 }
 
-// 🔥 ENVIO
+// 🔥 ENVIO GARANTIDO
 function enviar(url) {
+
   document.getElementById("status").innerText = "Registrando...";
 
-  let img = new Image();
-  img.src = url + "&t=" + new Date().getTime();
+  try {
+    // executa chamada
+    let img = new Image();
+    img.src = url + "&t=" + Date.now();
 
+    console.log("Chamando:", img.src);
+
+  } catch (e) {
+    console.error("Erro envio:", e);
+  }
+
+  // 🔥 GARANTE overlay independente do retorno
   setTimeout(() => {
 
-    mostrarOverlay("REGISTRADO", "ok");
+    mostrarOverlay("REGISTRADO");
 
     beep();
     vibrar();
@@ -126,14 +126,10 @@ function enviar(url) {
   }, 800);
 }
 
-// 🔁 RESET
 function resetar() {
   setTimeout(() => {
     bloqueado = false;
-    ultimo = "";
-
     esconderOverlay();
-
     document.getElementById("status").innerText = "Aguardando leitura...";
   }, 2000);
 }
@@ -141,12 +137,9 @@ function resetar() {
 function onScanSuccess(decodedText) {
 
   if (bloqueado) return;
-  if (decodedText === ultimo) return;
-
-  ultimo = decodedText;
   bloqueado = true;
 
-  document.getElementById("status").innerText = "QR lido ✔";
+  console.log("QR lido:", decodedText);
 
   beep();
   vibrar();
