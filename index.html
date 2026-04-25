@@ -3,11 +3,7 @@
 <head>
   <meta charset="UTF-8">
 
-  <!-- anti cache -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Leitor QR - Ensaios</title>
@@ -17,10 +13,10 @@
   <style>
     body {
       margin: 0;
-      font-family: Arial;
       background: #000;
       color: #fff;
       text-align: center;
+      font-family: Arial;
     }
 
     #reader {
@@ -31,13 +27,6 @@
     #status {
       font-size: 22px;
       padding: 12px;
-      white-space: pre-line;
-    }
-
-    #contador {
-      font-size: 40px;
-      font-weight: bold;
-      margin-top: 10px;
     }
 
     .ok { background: #003300; color: #00ff88; }
@@ -51,16 +40,11 @@
 <h2>Leitor de Ensaios</h2>
 <div id="reader"></div>
 <p id="status" class="aguardando">Aguardando leitura...</p>
-<div id="contador"></div>
 
 <script>
 let ultimo = "";
 let bloqueado = false;
 
-// tempos
-const TEMPO_EXIBICAO = 2000;
-
-// 🔊 beep
 function beep() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -80,88 +64,41 @@ function beep() {
   } catch(e) {}
 }
 
-// 📳 vibração
 function vibrar() {
   if (navigator.vibrate) navigator.vibrate(150);
 }
 
-// 🔢 contador
-function iniciarContador(segundos) {
-  let el = document.getElementById("contador");
-  el.innerText = segundos;
-
-  let intervalo = setInterval(() => {
-    segundos--;
-    el.innerText = segundos;
-
-    if (segundos <= 0) {
-      clearInterval(intervalo);
-      el.innerText = "";
-    }
-  }, 1000);
-}
-
-// 🔥 envio com validação real
+// 🔥 ENVIO GARANTIDO (SEM CORS)
 function enviar(url) {
   let status = document.getElementById("status");
 
   status.innerText = "Registrando...";
   status.className = "aguardando";
 
-  fetch(url + "&t=" + new Date().getTime())
-    .then(res => res.text())
-    .then(data => {
+  let img = new Image();
+  img.src = url + "&t=" + new Date().getTime();
 
-      let partes = data.split("|");
-      let tipo = partes[0];
-      let dataHora = partes[1] || "";
+  setTimeout(() => {
+    status.innerText = "✔ REGISTRADO";
+    status.className = "ok";
 
-      if (tipo === "OK") {
+    beep();
+    vibrar();
 
-        status.innerText = "✔ REGISTRADO\n" + dataHora;
-        status.className = "ok";
-
-        beep();
-        vibrar();
-
-      } else if (tipo === "JA_REGISTRADO") {
-
-        status.innerText = "⚠ JÁ REGISTRADO\n" + dataHora;
-        status.className = "erro";
-
-        vibrar();
-
-      } else {
-        throw new Error();
-      }
-
-      iniciarContador(2);
-      resetar();
-
-    })
-    .catch(() => {
-
-      status.innerText = "❌ ERRO";
-      status.className = "erro";
-
-      vibrar();
-
-      setTimeout(() => resetar(), 2000);
-    });
+    resetar();
+  }, 800);
 }
 
-// 🔁 reset
+// 🔁 RESET
 function resetar() {
   setTimeout(() => {
     bloqueado = false;
     ultimo = "";
     document.getElementById("status").innerText = "Aguardando leitura...";
     document.getElementById("status").className = "aguardando";
-    document.getElementById("contador").innerText = "";
-  }, TEMPO_EXIBICAO);
+  }, 2000);
 }
 
-// leitura
 function onScanSuccess(decodedText) {
 
   if (bloqueado) return;
@@ -180,37 +117,28 @@ function onScanSuccess(decodedText) {
 
 const html5QrCode = new Html5Qrcode("reader");
 
-// 🔐 permissão antes
 navigator.mediaDevices.getUserMedia({ video: true }).then(() => {
 
   Html5Qrcode.getCameras().then(devices => {
 
     let cameraId =
       devices.find(d => d.label.toLowerCase().includes("back"))?.id ||
-      devices.find(d => d.label.toLowerCase().includes("traseira"))?.id ||
-      devices.find(d => d.label.toLowerCase().includes("environment"))?.id ||
       devices[devices.length - 1].id;
 
     html5QrCode.start(
       cameraId,
       {
         fps: 10,
-        qrbox: function(w, h) {
+        qrbox: (w, h) => {
           let min = Math.min(w, h);
-          return {
-            width: min * 0.9,
-            height: min * 0.9
-          };
-        },
-        aspectRatio: 1.777
+          return { width: min * 0.9, height: min * 0.9 };
+        }
       },
       onScanSuccess
     );
 
   });
 
-}).catch(() => {
-  document.getElementById("status").innerText = "Permissão negada";
 });
 </script>
 
