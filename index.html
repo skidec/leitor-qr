@@ -29,8 +29,9 @@
     }
 
     #status {
-      font-size: 24px;
+      font-size: 22px;
       padding: 12px;
+      white-space: pre-line;
     }
 
     #contador {
@@ -56,11 +57,10 @@
 let ultimo = "";
 let bloqueado = false;
 
-// ⏱ CONFIGURAÇÕES
-const TEMPO_ENVIO = 700;     // tempo simulação envio
-const TEMPO_EXIBICAO = 2000; // tempo mostrar "registrado"
+// tempos
+const TEMPO_EXIBICAO = 2000;
 
-// 🔊 BIP
+// 🔊 beep
 function beep() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -85,57 +85,72 @@ function vibrar() {
   if (navigator.vibrate) navigator.vibrate(150);
 }
 
-// 🔢 CONTADOR VISUAL
+// 🔢 contador
 function iniciarContador(segundos) {
-  let contador = document.getElementById("contador");
-  contador.innerText = segundos;
+  let el = document.getElementById("contador");
+  el.innerText = segundos;
 
   let intervalo = setInterval(() => {
     segundos--;
-    contador.innerText = segundos;
+    el.innerText = segundos;
 
     if (segundos <= 0) {
       clearInterval(intervalo);
-      contador.innerText = "";
+      el.innerText = "";
     }
   }, 1000);
 }
 
-// 🔥 ENVIO
+// 🔥 envio com validação real
 function enviar(url) {
   let status = document.getElementById("status");
 
   status.innerText = "Registrando...";
   status.className = "aguardando";
 
-  try {
-    let img = new Image();
-    img.src = url + "&t=" + new Date().getTime();
+  fetch(url + "&t=" + new Date().getTime())
+    .then(res => res.text())
+    .then(data => {
 
-    setTimeout(() => {
+      let partes = data.split("|");
+      let tipo = partes[0];
+      let dataHora = partes[1] || "";
 
-      status.innerText = "✔ REGISTRADO";
-      status.className = "ok";
+      if (tipo === "OK") {
 
-      beep();
-      vibrar();
+        status.innerText = "✔ REGISTRADO\n" + dataHora;
+        status.className = "ok";
 
-      iniciarContador(TEMPO_EXIBICAO / 1000);
+        beep();
+        vibrar();
 
+      } else if (tipo === "JA_REGISTRADO") {
+
+        status.innerText = "⚠ JÁ REGISTRADO\n" + dataHora;
+        status.className = "erro";
+
+        vibrar();
+
+      } else {
+        throw new Error();
+      }
+
+      iniciarContador(2);
       resetar();
 
-    }, TEMPO_ENVIO);
+    })
+    .catch(() => {
 
-  } catch (e) {
-    status.innerText = "❌ ERRO";
-    status.className = "erro";
-    vibrar();
+      status.innerText = "❌ ERRO";
+      status.className = "erro";
 
-    setTimeout(() => resetar(), 2000);
-  }
+      vibrar();
+
+      setTimeout(() => resetar(), 2000);
+    });
 }
 
-// 🔁 RESET
+// 🔁 reset
 function resetar() {
   setTimeout(() => {
     bloqueado = false;
@@ -146,7 +161,7 @@ function resetar() {
   }, TEMPO_EXIBICAO);
 }
 
-// 📷 LEITURA
+// leitura
 function onScanSuccess(decodedText) {
 
   if (bloqueado) return;
@@ -165,7 +180,7 @@ function onScanSuccess(decodedText) {
 
 const html5QrCode = new Html5Qrcode("reader");
 
-// 🔐 PERMISSÃO PRIMEIRO
+// 🔐 permissão antes
 navigator.mediaDevices.getUserMedia({ video: true }).then(() => {
 
   Html5Qrcode.getCameras().then(devices => {
