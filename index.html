@@ -95,37 +95,48 @@ function onScanSuccess(decodedText) {
 
 const html5QrCode = new Html5Qrcode("reader");
 
-Html5Qrcode.getCameras().then(devices => {
+// 🔥 ETAPA 1: forçar permissão primeiro
+navigator.mediaDevices.getUserMedia({ video: true }).then(() => {
 
-  let backCamera = devices.find(d =>
-    d.label.toLowerCase().includes("back") ||
-    d.label.toLowerCase().includes("traseira") ||
-    d.label.toLowerCase().includes("environment")
-  );
+  Html5Qrcode.getCameras().then(devices => {
 
-  let cameraId = backCamera ? backCamera.id : devices[devices.length - 1].id;
+    if (!devices.length) {
+      document.getElementById("status").innerText = "Sem câmera";
+      return;
+    }
 
-  html5QrCode.start(
-    cameraId,
-    {
-      fps: 10,
+    console.log("Câmeras:", devices);
 
-      // 🔥 área de leitura dinâmica (quase tela toda)
-      qrbox: function(viewfinderWidth, viewfinderHeight) {
-        let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-        return {
-          width: minEdge * 0.9,
-          height: minEdge * 0.9
-        };
+    // 🔥 PRIORIDADE DE ESCOLHA
+    let cameraId =
+      devices.find(d => d.label.toLowerCase().includes("back"))?.id ||
+      devices.find(d => d.label.toLowerCase().includes("traseira"))?.id ||
+      devices.find(d => d.label.toLowerCase().includes("environment"))?.id ||
+      devices[devices.length - 1].id;
+
+    html5QrCode.start(
+      cameraId,
+      {
+        fps: 10,
+
+        // 🔥 leitura quase tela toda
+        qrbox: function(w, h) {
+          let min = Math.min(w, h);
+          return {
+            width: min * 0.9,
+            height: min * 0.9
+          };
+        },
+
+        aspectRatio: 1.777
       },
+      onScanSuccess
+    );
 
-      aspectRatio: 1.777
-    },
-    onScanSuccess
-  );
+  });
 
 }).catch(err => {
-  document.getElementById("status").innerText = "Erro câmera";
+  document.getElementById("status").innerText = "Permissão negada";
 });
 </script>
 
