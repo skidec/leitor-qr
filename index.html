@@ -20,24 +20,37 @@
     }
 
     h2 {
-      font-size: 2.4em; /* 🔥 +50% */
+      font-size: 5vw; /* 🔥 responsivo */
       margin: 10px 0;
     }
 
     #reader {
       width: 100vw;
-      height: 85vh;
+      height: 80vh;
     }
 
     #status {
-      font-size: 33px; /* 🔥 antes ~22px */
-      padding: 18px;
+      font-size: 8vw; /* 🔥 bem grande */
+      padding: 20px;
       font-weight: bold;
     }
 
-    .ok { background: #003300; color: #00ff88; }
-    .erro { background: #330000; color: #ff4444; }
-    .aguardando { color: #ccc; }
+    .ok { 
+      background: #003300; 
+      color: #00ff88; 
+      font-size: 9vw; /* 🔥 maior ainda quando OK */
+    }
+
+    .erro { 
+      background: #330000; 
+      color: #ff4444; 
+      font-size: 9vw;
+    }
+
+    .aguardando { 
+      color: #ccc; 
+      font-size: 7vw;
+    }
   </style>
 </head>
 
@@ -45,7 +58,7 @@
 
 <h2>Leitor de Ensaios</h2>
 <div id="reader"></div>
-<p id="status" class="aguardando">Aguardando leitura...</p>
+<p id="status" class="aguardando">AGUARDANDO LEITURA</p>
 
 <script>
 let ultimo = "";
@@ -98,8 +111,9 @@ function resetar() {
   setTimeout(() => {
     bloqueado = false;
     ultimo = "";
-    document.getElementById("status").innerText = "AGUARDANDO LEITURA...";
-    document.getElementById("status").className = "aguardando";
+    let status = document.getElementById("status");
+    status.innerText = "AGUARDANDO LEITURA";
+    status.className = "aguardando";
   }, 2000);
 }
 
@@ -111,7 +125,9 @@ function onScanSuccess(decodedText) {
   ultimo = decodedText;
   bloqueado = true;
 
-  document.getElementById("status").innerText = "QR LIDO ✔";
+  let status = document.getElementById("status");
+  status.innerText = "QR LIDO ✔";
+  status.className = "aguardando";
 
   beep();
   vibrar();
